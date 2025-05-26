@@ -3,12 +3,25 @@
 #include <alloca.h>
 
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 int WIDTH = 800;
 int HEIGHT = 600;
+
+std::string read_shader_file(const std::string& filePath) {
+  std::ifstream file(filePath);
+  if (!file) {
+    std::cerr << "Error: Failed to open shader file: " << filePath << "\n";
+    return "";
+  }
+
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  return buffer.str();
+}
 
 void framebuffer_size_callback(GLFWwindow* /*window*/, int width, int height) {
   WIDTH = width;
@@ -103,21 +116,8 @@ int main() {
   double lastTime = glfwGetTime();
   int nbFrames = 0;
 
-  std::string vertex_shader = R"(
-    #version 330 core
-    layout(location=0) in vec4 position;
-    void main() {
-      gl_Position = position;
-    }
-  )";
-
-  std::string fragment_shader = R"(
-    #version 330 core
-    layout(location=0) out vec4 color;
-    void main() {
-      color = vec4(1.0, 0.0, 0.0, 1.0); // Red color
-    }
-  )";
+  std::string vertex_shader = read_shader_file("./res/shaders/vertex.glsl");
+  std::string fragment_shader = read_shader_file("./res/shaders/fragment.glsl");
 
   unsigned int shader = create_shader(vertex_shader, fragment_shader);
   glUseProgram(shader);
