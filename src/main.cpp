@@ -103,7 +103,12 @@ int main() {
 
   // START HERE
 
-  std::array<float, 6> positions = {-0.5f, -0.5f, 0.0f, 0.5f, 0.5f, -0.5f};
+  std::array<float, 8> positions = {-0.5f, -0.5f, 0.5f, -0.5f, 0.5f,
+                                    0.5f,  -0.5f, 0.5f
+
+  };
+
+  std::array<unsigned int, 6> indices = {0, 1, 2, 2, 3, 0};
 
   GLuint buffer;
   glGenBuffers(1, &buffer);
@@ -112,6 +117,12 @@ int main() {
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+
+  GLuint ibo;
+  glGenBuffers(1, &ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(),
+               GL_STATIC_DRAW);
 
   double lastTime = glfwGetTime();
   int nbFrames = 0;
@@ -137,7 +148,7 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
