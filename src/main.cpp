@@ -3,13 +3,23 @@
 #include <alloca.h>
 
 #include <array>
+#include <cassert>
 #include <fstream>
 #include <iostream>
+#include <print>
 #include <sstream>
 #include <string>
 
 int WIDTH = 800;
 int HEIGHT = 600;
+
+static void glClearError() { while (glGetError() != GL_NO_ERROR); }
+
+static void glCheckError() {
+  while (GLenum error = glGetError()) {
+    std::cout << "[OpenGL Error ] (" << error << ")\n";
+  }
+}
 
 std::string read_shader_file(const std::string& filePath) {
   std::ifstream file(filePath);
@@ -73,9 +83,9 @@ int main() {
     return -1;
   }
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
   GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Fixed-function Triangle", nullptr, nullptr);
@@ -93,7 +103,7 @@ int main() {
     return -1;
   }
 
-  glfwSwapInterval(0);
+  glfwSwapInterval(1);
 
   std::cout << "GPU Renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "GPU Vendor: " << glGetString(GL_VENDOR) << std::endl;
@@ -109,6 +119,10 @@ int main() {
   };
 
   std::array<unsigned int, 6> indices = {0, 1, 2, 2, 3, 0};
+
+  unsigned int vao;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
   GLuint buffer;
   glGenBuffers(1, &buffer);
@@ -133,10 +147,31 @@ int main() {
   unsigned int shader = create_shader(vertex_shader, fragment_shader);
   glUseProgram(shader);
 
+  int location = glGetUniformLocation(shader, "u_color");
+  assert(location != -1);
+
+  float r_chanel = 0.2f;
+
+  glBindVertexArray(0);
+  glUseProgram(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
   // Loop
   while (!glfwWindowShouldClose(window)) {
     double currentTime = glfwGetTime();
     nbFrames++;
+
+    if (r_chanel >= 1.0f) {
+      r_chanel = 0.0f;
+    } else {
+      r_chanel += 0.001f;
+    }
+
+    glUseProgram(shader);
+    glUniform4f(location, r_chanel, 0.3f, 0.8f, 1.0f);
+
+    glBindVertexArray(vao);
 
     if (currentTime - lastTime >= 1.0) {
       std::ostringstream oss;
@@ -146,9 +181,12 @@ int main() {
       lastTime += 1.0;
     }
 
+    glClearError();
+
     glClear(GL_COLOR_BUFFER_BIT);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    glCheckError();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
